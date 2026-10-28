@@ -88,19 +88,21 @@ object Docs {
             throw IOException("„$name“ ist zu groß für dieses Gerät.")
         }
 
-        doc.use {
+        return doc.use {
             val pages = it.numberOfPages
             if (pages == 0) {
                 raw.delete()
                 throw IOException("„$name“ enthält keine Seiten.")
             }
-            if (!it.isEncrypted) return PdfSource(id, raw, name, pages, size, false)
-
-            it.isAllSecurityToBeRemoved = true
-            val plain = File(sourceDir(ctx), "q${id}_offen.pdf")
-            it.save(plain)
-            raw.delete()
-            return PdfSource(id, plain, name, pages, size, true)
+            if (!it.isEncrypted) {
+                PdfSource(id, raw, name, pages, size, false)
+            } else {
+                it.isAllSecurityToBeRemoved = true
+                val plain = File(sourceDir(ctx), "q${id}_offen.pdf")
+                it.save(plain)
+                raw.delete()
+                PdfSource(id, plain, name, pages, size, true)
+            }
         }
     }
 
@@ -205,7 +207,7 @@ class PageRenderer(file: File) : Closeable {
 
     /** Zeichnet die Seite auf weißem Grund, die längere Seite hat höchstens [longSide] Pixel. */
     fun render(index: Int, longSide: Int, forPrint: Boolean = false): Bitmap {
-        renderer.openPage(index).use { page ->
+        return renderer.openPage(index).use { page ->
             val s = longSide.toFloat() / max(page.width, page.height)
             val w = max(1, (page.width * s).roundToInt())
             val h = max(1, (page.height * s).roundToInt())
@@ -215,7 +217,7 @@ class PageRenderer(file: File) : Closeable {
                 bmp, null, null,
                 if (forPrint) PdfRenderer.Page.RENDER_MODE_FOR_PRINT else PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
             )
-            return bmp
+            bmp
         }
     }
 

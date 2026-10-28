@@ -172,7 +172,7 @@ class ToolActivity : AppCompatActivity() {
                     if (raster) "Versuche die Stufe „Stark“." else "Versuche „Stark“ oder „Seiten komplett als Bild“."
                 tvResult.visibility = View.VISIBLE
             } else {
-                val pct = (100 - r.after * 100 / r.before).coerceAtLeast(1)
+                val pct = (100 - r.after * 100 / r.before).coerceAtLeast(1L)
                 tvResult.text = "Vorher $before · nachher ${Docs.formatSize(r.after)} (−$pct %)"
                 tvResult.visibility = View.VISIBLE
                 Flow.showDone(this, "Verkleinert um $pct %", result, "application/pdf", "Downloads/${Docs.FOLDER}")

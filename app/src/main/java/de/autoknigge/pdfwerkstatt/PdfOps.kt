@@ -263,7 +263,7 @@ object PdfOps {
             else -> "ohne_Passwort"
         }
         val name = "${source.baseName}_$suffix.pdf"
-        PDDocument.load(source.file, Docs.memory()).use { doc ->
+        return PDDocument.load(source.file, Docs.memory()).use { doc ->
             if (stripMeta) {
                 doc.documentInformation = PDDocumentInformation()
                 doc.documentCatalog.metadata = null
@@ -277,7 +277,7 @@ object PdfOps {
                 doc.protect(policy)
             }
             val uri = Docs.save(ctx, name, "application/pdf") { doc.save(it) }
-            return SaveResult(listOf(uri), listOf(name))
+            SaveResult(listOf(uri), listOf(name))
         }
     }
 
