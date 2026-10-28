@@ -36,7 +36,7 @@ android {
             providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
                 .standardOutput.asText.get().trim().toInt()
         }.getOrDefault(0)
-        val step = (commits - 8).coerceAtLeast(0)
+        val step = (commits - 9).coerceAtLeast(0)
         versionCode = 100 + commits
         versionName = "${1 + step / 10}.${step % 10}"
 
