@@ -31,8 +31,10 @@ android {
         applicationId = "de.autoknigge.pdfwerkstatt"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // Jeder GitHub-Build zählt hoch (Play Store verlangt steigende Versionscodes). Lokal: 100.
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
+        versionCode = run + 100
+        versionName = "1.0.$run"
 
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_BANNER_ID", "\"$admobBannerId\"")
