@@ -31,10 +31,14 @@ android {
         applicationId = "de.autoknigge.pdfwerkstatt"
         minSdk = 29
         targetSdk = 36
-        // Jeder GitHub-Build zählt hoch (Play Store verlangt steigende Versionscodes). Lokal: 100.
-        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
-        versionCode = run + 100
-        versionName = "1.0.$run"
+        // Version zählt mit jedem Commit auf main: 1.0, 1.1 … 1.9, 2.0 (Play Store verlangt steigende Codes).
+        val commits = runCatching {
+            providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
+                .standardOutput.asText.get().trim().toInt()
+        }.getOrDefault(0)
+        val step = (commits - 8).coerceAtLeast(0)
+        versionCode = 100 + commits
+        versionName = "${1 + step / 10}.${step % 10}"
 
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_BANNER_ID", "\"$admobBannerId\"")
