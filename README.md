@@ -1,4 +1,4 @@
-# PDF-Werkstatt
+# PDF-Profi Werkstatt
 
 Android-App zum Bearbeiten von PDFs: zusammenfügen, Seiten sortieren/drehen/löschen, aufteilen, verkleinern, in Bilder umwandeln, Passwort setzen oder entfernen, Metadaten löschen. Alles lokal auf dem Gerät. Gratis mit AdMob-Werbung (Banner + App-Start-Anzeige). Umfang: siehe [SCOPE.md](SCOPE.md).
 
