@@ -31,8 +31,14 @@ android {
         applicationId = "de.autoknigge.pdfwerkstatt"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // Version zählt mit jedem Commit auf main: 1.0, 1.1 … 1.9, 2.0 (Play Store verlangt steigende Codes).
+        val commits = runCatching {
+            providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
+                .standardOutput.asText.get().trim().toInt()
+        }.getOrDefault(0)
+        val step = (commits - 9).coerceAtLeast(0)
+        versionCode = 100 + commits
+        versionName = "${1 + step / 10}.${step % 10}"
 
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_BANNER_ID", "\"$admobBannerId\"")

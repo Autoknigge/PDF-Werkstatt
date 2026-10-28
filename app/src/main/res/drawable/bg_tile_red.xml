@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kachel wie in Video-Teiler: Schatten, goldener Rahmen, gewölbte Fläche (Grundfarbe #9E3A28). -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#55FFFFFF">
+    <item>
+        <layer-list>
+            <item
+                android:left="3dp"
+                android:top="6dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#80000000" />
+                    <corners android:radius="18dp" />
+                </shape>
+            </item>
+            <item
+                android:bottom="6dp"
+                android:right="3dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:angle="315"
+                        android:centerColor="#C79A2E"
+                        android:endColor="#4A2E10"
+                        android:startColor="#F6DE92" />
+                    <corners android:radius="18dp" />
+                </shape>
+            </item>
+            <item
+                android:bottom="9dp"
+                android:left="3dp"
+                android:right="6dp"
+                android:top="3dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:angle="315"
+                        android:centerColor="#993827"
+                        android:endColor="#572016"
+                        android:startColor="#DD7967" />
+                    <corners android:radius="15dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</ripple>
