@@ -31,6 +31,8 @@ class AdManager(
     private var started = false
     private var adsInitialized = false
     private var adView: AdView? = null
+    private var retries = 0
+    private val retryHandler = Handler(Looper.getMainLooper())
 
     fun start() {
         if (started) return
@@ -126,12 +128,19 @@ class AdManager(
         container.removeAllViews()
         container.addView(view)
         adView = view
-        // Diagnose (nur zum Testen): Fehler beim Laden der Anzeige kurz einblenden.
         view.adListener = object : AdListener() {
+            override fun onAdLoaded() {
+                retries = 0
+            }
+
             override fun onAdFailedToLoad(error: LoadAdError) {
-                if (DEBUG_ADS) {
-                    Toast.makeText(activity, "Banner: Fehler ${error.code} – ${error.message}", Toast.LENGTH_LONG).show()
-                }
+                // Kein Fill: nach einer Pause erneut versuchen (30, 60 und 120 Sekunden).
+                if (adView !== view || retries >= 3) return
+                val wait = 30_000L shl retries
+                retries++
+                retryHandler.postDelayed({
+                    if (adView === view) view.loadAd(AdRequest.Builder().build())
+                }, wait)
             }
         }
         view.loadAd(AdRequest.Builder().build())
@@ -146,12 +155,13 @@ class AdManager(
     }
 
     fun destroy() {
+        retryHandler.removeCallbacksAndMessages(null)
         adView?.destroy()
         adView = null
     }
 
     companion object {
-        private const val DEBUG_ADS = true
+        private const val DEBUG_ADS = false
         private var startAdHandled = false
     }
 }
