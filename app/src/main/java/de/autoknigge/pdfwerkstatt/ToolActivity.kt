@@ -20,7 +20,8 @@ class ToolActivity : AppCompatActivity() {
         SPLIT("PDF aufteilen", "Aufteilen", "Teile in „Downloads/PDF-Profi Werkstatt“"),
         COMPRESS("PDF verkleinern", "Verkleinern", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert"),
         IMAGES("PDF zu Bildern", "Bilder speichern", "In „Bilder/PDF-Profi Werkstatt“ (Galerie)"),
-        PROTECT("Passwort & Metadaten", "Speichern", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert")
+        PROTECT("Passwort & Metadaten", "Speichern", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert"),
+        STAMP("Seitenzahlen & Wasserzeichen", "Einfügen", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert")
     }
 
     companion object {
@@ -65,7 +66,8 @@ class ToolActivity : AppCompatActivity() {
             Mode.SPLIT to R.id.secSplit,
             Mode.COMPRESS to R.id.secCompress,
             Mode.IMAGES to R.id.secImages,
-            Mode.PROTECT to R.id.secProtect
+            Mode.PROTECT to R.id.secProtect,
+            Mode.STAMP to R.id.secStamp
         ).forEach { (m, id) -> findViewById<View>(id).visibility = if (m == mode) View.VISIBLE else View.GONE }
 
         val etRanges = findViewById<EditText>(R.id.etRanges)
@@ -138,6 +140,7 @@ class ToolActivity : AppCompatActivity() {
             Mode.COMPRESS -> runCompress(src)
             Mode.IMAGES -> runImages(src)
             Mode.PROTECT -> runProtect(src)
+            Mode.STAMP -> runStamp(src)
         }
     }
 
@@ -195,6 +198,23 @@ class ToolActivity : AppCompatActivity() {
         }
         work(pages.size, "Bilder konnten nicht gespeichert werden", { p -> PdfOps.toImages(this, src, pages, dpi, png, p) }) {
             Flow.showDone(this, "Bilder gespeichert", it, if (png) "image/png" else "image/jpeg", "Bilder/${Docs.FOLDER}")
+        }
+    }
+
+    private fun runStamp(src: PdfSource) {
+        val numbers = findViewById<CheckBox>(R.id.cbNumbers).isChecked
+        val wm = findViewById<EditText>(R.id.etWatermark).text.toString().trim()
+        if (!numbers && wm.isEmpty()) {
+            return Flow.toast(this, "Wähle Seitenzahlen oder gib ein Wasserzeichen-Wort ein.")
+        }
+        val pos = when (findViewById<RadioGroup>(R.id.rgNumPos).checkedRadioButtonId) {
+            R.id.rbPosRight -> PdfOps.NumPos.BOTTOM_RIGHT
+            R.id.rbPosTop -> PdfOps.NumPos.TOP_RIGHT
+            else -> PdfOps.NumPos.BOTTOM_CENTER
+        }
+        val total = findViewById<CheckBox>(R.id.cbNumTotal).isChecked
+        work(src.pages, "Einfügen fehlgeschlagen", { p -> PdfOps.stamp(this, src, numbers, pos, total, wm, p) }) {
+            Flow.showDone(this, "PDF beschriftet", it, "application/pdf", "Downloads/${Docs.FOLDER}")
         }
     }
 

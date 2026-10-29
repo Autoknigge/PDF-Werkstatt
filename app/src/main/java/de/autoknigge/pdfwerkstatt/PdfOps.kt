@@ -10,6 +10,10 @@ import com.tom_roush.pdfbox.cos.COSName
 import com.tom_roush.pdfbox.cos.COSStream
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDDocumentInformation
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import com.tom_roush.pdfbox.util.Matrix
 import com.tom_roush.pdfbox.pdmodel.PDResources
 import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
@@ -275,6 +279,106 @@ object PdfOps {
                 val policy = StandardProtectionPolicy(password, password, AccessPermission())
                 policy.encryptionKeyLength = 256
                 doc.protect(policy)
+            }
+            val uri = Docs.save(ctx, name, "application/pdf") { doc.save(it) }
+            SaveResult(listOf(uri), listOf(name))
+        }
+    }
+
+    // ---------- Seitenzahlen & Wasserzeichen ----------
+
+    enum class NumPos { BOTTOM_CENTER, BOTTOM_RIGHT, TOP_RIGHT }
+
+    /** Nur Zeichen, die die Standardschrift darstellen kann (sonst „?“). */
+    private fun printable(font: PDType1Font, text: String): String = buildString {
+        for (c in text) {
+            try {
+                font.encode(c.toString())
+                append(c)
+            } catch (e: Exception) {
+                append('?')
+            }
+        }
+    }
+
+    /**
+     * Fügt Seitenzahlen ([numbers], Lage [pos], „Seite 3 von 20“ wenn [withTotal]) und/oder ein diagonales
+     * Wasserzeichen ([watermark]) ein. Berücksichtigt gedrehte Seiten.
+     */
+    fun stamp(
+        ctx: Context,
+        source: PdfSource,
+        numbers: Boolean,
+        pos: NumPos,
+        withTotal: Boolean,
+        watermark: String,
+        progress: (Int) -> Unit
+    ): SaveResult {
+        val name = "${source.baseName}_beschriftet.pdf"
+        val wm = watermark.trim()
+        return PDDocument.load(source.file, Docs.memory()).use { doc ->
+            val font = PDType1Font.HELVETICA
+            val bold = PDType1Font.HELVETICA_BOLD
+            val total = doc.numberOfPages
+            val wmText = if (wm.isNotEmpty()) printable(bold, wm) else ""
+            for (i in 0 until total) {
+                val page = doc.getPage(i)
+                val box = page.cropBox
+                val w = box.width
+                val h = box.height
+                val rot = ((page.rotation % 360) + 360) % 360
+                val vw = if (rot == 90 || rot == 270) h else w
+                val vh = if (rot == 90 || rot == 270) w else h
+                val m = when (rot) {
+                    90 -> Matrix(0f, 1f, -1f, 0f, w + box.lowerLeftX, box.lowerLeftY)
+                    180 -> Matrix(-1f, 0f, 0f, -1f, w + box.lowerLeftX, h + box.lowerLeftY)
+                    270 -> Matrix(0f, -1f, 1f, 0f, box.lowerLeftX, h + box.lowerLeftY)
+                    else -> Matrix(1f, 0f, 0f, 1f, box.lowerLeftX, box.lowerLeftY)
+                }
+                PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                    cs.transform(m)
+                    if (wmText.isNotEmpty()) {
+                        val gs = PDExtendedGraphicsState().apply {
+                            nonStrokingAlphaConstant = 0.22f
+                        }
+                        cs.saveGraphicsState()
+                        cs.setGraphicsStateParameters(gs)
+                        val diag = Math.sqrt((vw * vw + vh * vh).toDouble()).toFloat()
+                        val unit = bold.getStringWidth(wmText) / 1000f
+                        val size = minOf(120f, 0.72f * diag / unit)
+                        val tw = unit * size
+                        val ang = Math.atan2(vh.toDouble(), vw.toDouble()).toFloat()
+                        val cx = vw / 2f
+                        val cy = vh / 2f
+                        val sx = cx - (tw / 2f) * Math.cos(ang.toDouble()).toFloat() + (size * 0.35f) * Math.sin(ang.toDouble()).toFloat()
+                        val sy = cy - (tw / 2f) * Math.sin(ang.toDouble()).toFloat() - (size * 0.35f) * Math.cos(ang.toDouble()).toFloat()
+                        cs.beginText()
+                        cs.setNonStrokingColor(0.35f, 0.35f, 0.35f)
+                        cs.setFont(bold, size)
+                        cs.setTextMatrix(Matrix.getRotateInstance(ang.toDouble(), sx, sy))
+                        cs.showText(wmText)
+                        cs.endText()
+                        cs.restoreGraphicsState()
+                    }
+                    if (numbers) {
+                        val label = if (withTotal) "Seite ${i + 1} von $total" else "${i + 1}"
+                        val size = 11f
+                        val tw = font.getStringWidth(label) / 1000f * size
+                        val margin = 26f
+                        val x = when (pos) {
+                            NumPos.BOTTOM_CENTER -> (vw - tw) / 2f
+                            else -> vw - margin - tw
+                        }
+                        val y = if (pos == NumPos.TOP_RIGHT) vh - margin else margin - 4f
+                        cs.beginText()
+                        cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                        cs.setFont(font, size)
+                        cs.newLineAtOffset(x, y)
+                        cs.showText(label)
+                        cs.endText()
+                    }
+                }
+                progress(i + 1)
             }
             val uri = Docs.save(ctx, name, "application/pdf") { doc.save(it) }
             SaveResult(listOf(uri), listOf(name))

@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tileCompress).setOnClickListener { startTool(ToolActivity.Mode.COMPRESS, emptyList()) }
         findViewById<View>(R.id.tileImages).setOnClickListener { startTool(ToolActivity.Mode.IMAGES, emptyList()) }
         findViewById<View>(R.id.tileProtect).setOnClickListener { startTool(ToolActivity.Mode.PROTECT, emptyList()) }
+        findViewById<View>(R.id.tileStamp).setOnClickListener { startTool(ToolActivity.Mode.STAMP, emptyList()) }
 
         mapOf(
             R.id.tvAbout to URL_HOME,
@@ -81,9 +82,10 @@ class MainActivity : AppCompatActivity() {
             "Aufteilen",
             "Verkleinern",
             "Zu Bildern",
-            "Passwort & Metadaten"
+            "Passwort & Metadaten",
+            "Seitenzahlen & Wasserzeichen"
         )
-        val modes = arrayOf(null, ToolActivity.Mode.SPLIT, ToolActivity.Mode.COMPRESS, ToolActivity.Mode.IMAGES, ToolActivity.Mode.PROTECT)
+        val modes = arrayOf(null, ToolActivity.Mode.SPLIT, ToolActivity.Mode.COMPRESS, ToolActivity.Mode.IMAGES, ToolActivity.Mode.PROTECT, ToolActivity.Mode.STAMP)
         val title = if (single) "Was möchtest du mit der PDF tun?" else "Was möchtest du mit den ${uris.size} PDFs tun?"
         AlertDialog.Builder(this)
             .setTitle(title)
