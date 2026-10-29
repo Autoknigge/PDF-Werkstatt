@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -44,12 +45,22 @@ class AdManager(
             activity,
             ConsentRequestParameters.Builder().build(),
             {
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
                     updateAdSettingsLink(info)
+                    if (DEBUG_ADS && (formError != null || !info.canRequestAds())) {
+                        Toast.makeText(
+                            activity,
+                            "Werbung: ${formError?.message ?: "Einwilligung fehlt (Status ${info.consentStatus})"}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                     if (info.canRequestAds()) initAds()
                 }
             },
-            {
+            { error ->
+                if (DEBUG_ADS) {
+                    Toast.makeText(activity, "Werbung: ${error.errorCode} – ${error.message}", Toast.LENGTH_LONG).show()
+                }
                 if (info.canRequestAds()) initAds()
             }
         )
@@ -115,6 +126,14 @@ class AdManager(
         container.removeAllViews()
         container.addView(view)
         adView = view
+        // Diagnose (nur zum Testen): Fehler beim Laden der Anzeige kurz einblenden.
+        view.adListener = object : AdListener() {
+            override fun onAdFailedToLoad(error: LoadAdError) {
+                if (DEBUG_ADS) {
+                    Toast.makeText(activity, "Banner: Fehler ${error.code} – ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
         view.loadAd(AdRequest.Builder().build())
     }
 
@@ -132,6 +151,7 @@ class AdManager(
     }
 
     companion object {
+        private const val DEBUG_ADS = true
         private var startAdHandled = false
     }
 }
