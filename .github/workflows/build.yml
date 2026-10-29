@@ -47,7 +47,7 @@ jobs:
 
       - name: Keystore bereitstellen
         if: env.HAS_KEYSTORE == 'true'
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+        run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | tr -cd 'A-Za-z0-9+/=' | base64 -d > "$RUNNER_TEMP/release.jks"
 
       - name: Signierte Release-APK und AAB bauen
         if: env.HAS_KEYSTORE == 'true'
