@@ -47,22 +47,12 @@ class AdManager(
             activity,
             ConsentRequestParameters.Builder().build(),
             {
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
                     updateAdSettingsLink(info)
-                    if (DEBUG_ADS && (formError != null || !info.canRequestAds())) {
-                        Toast.makeText(
-                            activity,
-                            "Werbung: ${formError?.message ?: "Einwilligung fehlt (Status ${info.consentStatus})"}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
                     if (info.canRequestAds()) initAds()
                 }
             },
-            { error ->
-                if (DEBUG_ADS) {
-                    Toast.makeText(activity, "Werbung: ${error.errorCode} – ${error.message}", Toast.LENGTH_LONG).show()
-                }
+            {
                 if (info.canRequestAds()) initAds()
             }
         )
@@ -161,7 +151,6 @@ class AdManager(
     }
 
     companion object {
-        private const val DEBUG_ADS = false
         private var startAdHandled = false
     }
 }
