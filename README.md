@@ -38,4 +38,4 @@ Keystore sicher aufbewahren – ohne ihn gibt es keine Updates.
 ## Technik
 
 - PDF-Bearbeitung: [PdfBox-Android](https://github.com/TomRoush/PdfBox-Android) (Apache-2.0), Vorschau und Bilder: Android-`PdfRenderer`.
-- Gespeichert wird über den MediaStore in `Downloads/PDF-Werkstatt` bzw. `Bilder/PDF-Werkstatt` – keine Speicher-Berechtigung nötig.
+- Gespeichert wird über den MediaStore in `Downloads/PDF-Profi Werkstatt` bzw. `Bilder/PDF-Profi Werkstatt` – keine Speicher-Berechtigung nötig.

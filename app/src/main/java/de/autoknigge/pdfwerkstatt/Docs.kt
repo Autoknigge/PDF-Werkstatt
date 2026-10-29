@@ -41,7 +41,7 @@ class PasswordNeeded(val name: String, val wrong: Boolean) : Exception()
 
 object Docs {
 
-    const val FOLDER = "PDF-Werkstatt"
+    const val FOLDER = "PDF-Profi Werkstatt"
     private val counter = AtomicLong(System.currentTimeMillis())
 
     /** Große PDFs nicht komplett im Arbeitsspeicher halten. */
@@ -155,7 +155,7 @@ object Docs {
     }
 
     /**
-     * Legt eine Datei in „Downloads/PDF-Werkstatt“ bzw. „Bilder/PDF-Werkstatt“ an und schreibt sie mit [block].
+     * Legt eine Datei in „Downloads/PDF-Profi Werkstatt“ bzw. „Bilder/PDF-Profi Werkstatt“ an und schreibt sie mit [block].
      * Schlägt das Schreiben fehl, wird die halbe Datei wieder entfernt.
      */
     fun save(ctx: Context, fileName: String, mime: String, block: (OutputStream) -> Unit): Uri {

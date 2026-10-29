@@ -17,10 +17,10 @@ import java.util.concurrent.Executors
 class ToolActivity : AppCompatActivity() {
 
     enum class Mode(val title: String, val action: String, val actionSub: String) {
-        SPLIT("PDF aufteilen", "Aufteilen", "Teile in „Downloads/PDF-Werkstatt“"),
-        COMPRESS("PDF verkleinern", "Verkleinern", "Wird in „Downloads/PDF-Werkstatt“ gespeichert"),
-        IMAGES("PDF zu Bildern", "Bilder speichern", "In „Bilder/PDF-Werkstatt“ (Galerie)"),
-        PROTECT("Passwort & Metadaten", "Speichern", "Wird in „Downloads/PDF-Werkstatt“ gespeichert")
+        SPLIT("PDF aufteilen", "Aufteilen", "Teile in „Downloads/PDF-Profi Werkstatt“"),
+        COMPRESS("PDF verkleinern", "Verkleinern", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert"),
+        IMAGES("PDF zu Bildern", "Bilder speichern", "In „Bilder/PDF-Profi Werkstatt“ (Galerie)"),
+        PROTECT("Passwort & Metadaten", "Speichern", "Wird in „Downloads/PDF-Profi Werkstatt“ gespeichert")
     }
 
     companion object {
