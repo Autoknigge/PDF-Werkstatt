@@ -339,7 +339,7 @@ object PdfOps {
                     cs.transform(m)
                     if (wmText.isNotEmpty()) {
                         val gs = PDExtendedGraphicsState().apply {
-                            nonStrokingAlphaConstant = 0.22f
+                            nonStrokingAlphaConstant = 0.13f
                         }
                         cs.saveGraphicsState()
                         cs.setGraphicsStateParameters(gs)

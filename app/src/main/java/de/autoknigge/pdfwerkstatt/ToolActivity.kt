@@ -70,6 +70,8 @@ class ToolActivity : AppCompatActivity() {
             Mode.STAMP to R.id.secStamp
         ).forEach { (m, id) -> findViewById<View>(id).visibility = if (m == mode) View.VISIBLE else View.GONE }
 
+        if (mode == Mode.STAMP) restoreStamp()
+
         val etRanges = findViewById<EditText>(R.id.etRanges)
         findViewById<RadioGroup>(R.id.rgSplit).setOnCheckedChangeListener { _, id ->
             etRanges.visibility = if (id == R.id.rbRanges) View.VISIBLE else View.GONE
@@ -201,6 +203,25 @@ class ToolActivity : AppCompatActivity() {
         }
     }
 
+    /** Merkt sich die letzte Wahl für Seitenzahlen und Wasserzeichen (nur auf dem Gerät). */
+    private fun saveStamp(numbers: Boolean, posId: Int, total: Boolean, watermark: String) {
+        getSharedPreferences("stamp", MODE_PRIVATE).edit()
+            .putBoolean("numbers", numbers).putInt("pos", posId).putBoolean("total", total)
+            .putString("watermark", watermark).apply()
+    }
+
+    private fun restoreStamp() {
+        val p = getSharedPreferences("stamp", MODE_PRIVATE)
+        if (!p.contains("numbers")) return
+        findViewById<CheckBox>(R.id.cbNumbers).isChecked = p.getBoolean("numbers", true)
+        val pos = p.getInt("pos", R.id.rbPosCenter)
+        if (pos in listOf(R.id.rbPosCenter, R.id.rbPosRight, R.id.rbPosTop)) {
+            findViewById<RadioGroup>(R.id.rgNumPos).check(pos)
+        }
+        findViewById<CheckBox>(R.id.cbNumTotal).isChecked = p.getBoolean("total", false)
+        findViewById<EditText>(R.id.etWatermark).setText(p.getString("watermark", ""))
+    }
+
     private fun runStamp(src: PdfSource) {
         val numbers = findViewById<CheckBox>(R.id.cbNumbers).isChecked
         val wm = findViewById<EditText>(R.id.etWatermark).text.toString().trim()
@@ -213,6 +234,7 @@ class ToolActivity : AppCompatActivity() {
             else -> PdfOps.NumPos.BOTTOM_CENTER
         }
         val total = findViewById<CheckBox>(R.id.cbNumTotal).isChecked
+        saveStamp(numbers, findViewById<RadioGroup>(R.id.rgNumPos).checkedRadioButtonId, total, wm)
         work(src.pages, "Einfügen fehlgeschlagen", { p -> PdfOps.stamp(this, src, numbers, pos, total, wm, p) }) {
             Flow.showDone(this, "PDF beschriftet", it, "application/pdf", "Downloads/${Docs.FOLDER}")
         }
