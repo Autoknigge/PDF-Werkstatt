@@ -1,6 +1,6 @@
 # PDF-Profi Werkstatt
 
-Android-App zum Bearbeiten von PDFs: zusammenfügen, Seiten sortieren/drehen/löschen, aufteilen, verkleinern, in Bilder umwandeln, Passwort setzen oder entfernen, Metadaten löschen, Seitenzahlen und Wasserzeichen einfügen. Alles lokal auf dem Gerät. Gratis mit AdMob-Werbung (Banner + App-Start-Anzeige). Umfang: siehe [SCOPE.md](SCOPE.md).
+Android-App zum Bearbeiten von PDFs: zusammenfügen, Seiten sortieren/drehen/löschen, aufteilen, verkleinern, in Bilder umwandeln, Passwort setzen oder entfernen, Metadaten löschen, Seitenzahlen und Wasserzeichen einfügen, Formulare mit der eigenen Unterschrift versehen. Alles lokal auf dem Gerät. Gratis mit AdMob-Werbung (Banner + App-Start-Anzeige). Umfang: siehe [SCOPE.md](SCOPE.md).
 
 Paketname: `de.autoknigge.pdfwerkstatt` – nach der Veröffentlichung im Play Store nicht mehr änderbar.
 

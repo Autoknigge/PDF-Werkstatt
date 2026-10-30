@@ -54,6 +54,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".SignActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+
+        <activity
             android:name=".ToolActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false"

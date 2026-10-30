@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tileImages).setOnClickListener { startTool(ToolActivity.Mode.IMAGES, emptyList()) }
         findViewById<View>(R.id.tileProtect).setOnClickListener { startTool(ToolActivity.Mode.PROTECT, emptyList()) }
         findViewById<View>(R.id.tileStamp).setOnClickListener { startTool(ToolActivity.Mode.STAMP, emptyList()) }
+        findViewById<View>(R.id.tileSign).setOnClickListener { startActivity(Intent(this, SignActivity::class.java)) }
 
         mapOf(
             R.id.tvAbout to URL_HOME,
@@ -85,13 +86,18 @@ class MainActivity : AppCompatActivity() {
             "Verkleinern",
             "Zu Bildern",
             "Passwort & Metadaten",
-            "Seitenzahlen & Wasserzeichen"
+            "Seitenzahlen & Wasserzeichen",
+            "Unterschreiben"
         )
         val modes = arrayOf(null, ToolActivity.Mode.SPLIT, ToolActivity.Mode.COMPRESS, ToolActivity.Mode.IMAGES, ToolActivity.Mode.PROTECT, ToolActivity.Mode.STAMP)
         val title = if (single) "Was möchtest du mit der PDF tun?" else "Was möchtest du mit den ${uris.size} PDFs tun?"
         AlertDialog.Builder(this)
             .setTitle(title)
             .setItems(labels) { _, which ->
+                if (which == modes.size) {
+                    startActivity(Flow.withUris(Intent(this, SignActivity::class.java), uris.take(1)))
+                    return@setItems
+                }
                 val mode = modes[which]
                 startTool(mode, if (mode == null) uris else uris.take(1))
             }

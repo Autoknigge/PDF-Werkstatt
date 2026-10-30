@@ -19,6 +19,7 @@ import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import com.tom_roush.pdfbox.pdmodel.graphics.form.PDFormXObject
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
+import com.tom_roush.pdfbox.pdmodel.graphics.image.LosslessFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -379,6 +380,57 @@ object PdfOps {
                     }
                 }
                 progress(i + 1)
+            }
+            val uri = Docs.save(ctx, name, "application/pdf") { doc.save(it) }
+            SaveResult(listOf(uri), listOf(name))
+        }
+    }
+
+    /**
+     * Setzt die Unterschrift [sigFile] (PNG mit transparentem Hintergrund) an die Stellen [placements]
+     * (Mittelpunkt und Breite als Bruchteil der sichtbaren Seite). Berücksichtigt gedrehte Seiten.
+     */
+    fun sign(
+        ctx: Context,
+        source: PdfSource,
+        placements: List<Placement>,
+        sigFile: File,
+        progress: (Int) -> Unit
+    ): SaveResult {
+        val name = "${source.baseName}_unterschrieben.pdf"
+        val bmp = android.graphics.BitmapFactory.decodeFile(sigFile.path)
+            ?: throw IOException("Die Unterschrift konnte nicht gelesen werden.")
+        val aspect = bmp.height.toFloat() / bmp.width
+        val byPage = placements.groupBy { it.page }
+        return PDDocument.load(source.file, Docs.memory()).use { doc ->
+            val img = LosslessFactory.createFromImage(doc, bmp)
+            var done = 0
+            for ((index, list) in byPage) {
+                val page = doc.getPage(index)
+                val box = page.cropBox
+                val w = box.width
+                val h = box.height
+                val rot = ((page.rotation % 360) + 360) % 360
+                val vw = if (rot == 90 || rot == 270) h else w
+                val vh = if (rot == 90 || rot == 270) w else h
+                val m = when (rot) {
+                    90 -> Matrix(0f, 1f, -1f, 0f, w + box.lowerLeftX, box.lowerLeftY)
+                    180 -> Matrix(-1f, 0f, 0f, -1f, w + box.lowerLeftX, h + box.lowerLeftY)
+                    270 -> Matrix(0f, -1f, 1f, 0f, box.lowerLeftX, h + box.lowerLeftY)
+                    else -> Matrix(1f, 0f, 0f, 1f, box.lowerLeftX, box.lowerLeftY)
+                }
+                PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                    cs.transform(m)
+                    for (p in list) {
+                        val sw = p.w * vw
+                        val sh = sw * aspect
+                        val x = p.cx * vw - sw / 2f
+                        val y = vh - p.cy * vh - sh / 2f
+                        cs.drawImage(img, x, y, sw, sh)
+                    }
+                }
+                done++
+                progress(done)
             }
             val uri = Docs.save(ctx, name, "application/pdf") { doc.save(it) }
             SaveResult(listOf(uri), listOf(name))
