@@ -387,23 +387,19 @@ object PdfOps {
     }
 
     /**
-     * Setzt die Unterschrift [sigFile] (PNG mit transparentem Hintergrund) an die Stellen [placements]
-     * (Mittelpunkt und Breite als Bruchteil der sichtbaren Seite). Berücksichtigt gedrehte Seiten.
+     * Setzt die Bilder in [placements] (Unterschriften, Datum und Ort; Mittelpunkt und Breite als Bruchteil
+     * der sichtbaren Seite) in die PDF. Berücksichtigt gedrehte Seiten.
      */
     fun sign(
         ctx: Context,
         source: PdfSource,
         placements: List<Placement>,
-        sigFile: File,
         progress: (Int) -> Unit
     ): SaveResult {
         val name = "${source.baseName}_unterschrieben.pdf"
-        val bmp = android.graphics.BitmapFactory.decodeFile(sigFile.path)
-            ?: throw IOException("Die Unterschrift konnte nicht gelesen werden.")
-        val aspect = bmp.height.toFloat() / bmp.width
         val byPage = placements.groupBy { it.page }
         return PDDocument.load(source.file, Docs.memory()).use { doc ->
-            val img = LosslessFactory.createFromImage(doc, bmp)
+            val images = IdentityHashMap<Bitmap, PDImageXObject>()
             var done = 0
             for ((index, list) in byPage) {
                 val page = doc.getPage(index)
@@ -422,11 +418,10 @@ object PdfOps {
                 PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
                     cs.transform(m)
                     for (p in list) {
+                        val img = images.getOrPut(p.bmp) { LosslessFactory.createFromImage(doc, p.bmp) }
                         val sw = p.w * vw
-                        val sh = sw * aspect
-                        val x = p.cx * vw - sw / 2f
-                        val y = vh - p.cy * vh - sh / 2f
-                        cs.drawImage(img, x, y, sw, sh)
+                        val sh = sw * p.bmp.height / p.bmp.width
+                        cs.drawImage(img, p.cx * vw - sw / 2f, vh - p.cy * vh - sh / 2f, sw, sh)
                     }
                 }
                 done++
