@@ -30,6 +30,7 @@ class SignActivity : AppCompatActivity(), SignHost {
     override val canPick = true
     override fun pickFile() = picker.launch(arrayOf("application/pdf"))
     override fun pickPhoto() = photoPicker.launch("image/*")
+    override fun pageWidthPt(index: Int): Float = renderer!!.pageSize(index).first.toFloat()
 
     override fun render(index: Int): Bitmap = renderer!!.render(index, 1800)
 
@@ -39,7 +40,7 @@ class SignActivity : AppCompatActivity(), SignHost {
     }
 
     override fun showDone(result: SignResult) {
-        Flow.showDone(this, "PDF unterschrieben", SaveResult(listOf(result.uri), listOf(result.name)), "application/pdf", "Downloads/${Docs.FOLDER}")
+        Flow.showDone(this, "PDF gespeichert", SaveResult(listOf(result.uri), listOf(result.name)), "application/pdf", "Downloads/${Docs.FOLDER}")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +62,7 @@ class SignActivity : AppCompatActivity(), SignHost {
             setOnClickListener { finish() }
         }, LinearLayout.LayoutParams(dp(48), dp(48)))
         top.addView(TextView(this).apply {
-            text = "PDF unterschreiben"; textSize = 22f; setTextColor(0xFFD4AF37.toInt()); setTypeface(typeface, Typeface.BOLD)
+            text = "Unterschreiben & Text"; textSize = 22f; setTextColor(0xFFD4AF37.toInt()); setTypeface(typeface, Typeface.BOLD)
         })
         root.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         ctl = SignController(this, this)

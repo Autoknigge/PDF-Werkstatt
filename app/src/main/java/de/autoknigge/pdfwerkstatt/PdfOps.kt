@@ -396,10 +396,11 @@ object PdfOps {
         placements: List<Placement>,
         progress: (Int) -> Unit
     ): SaveResult {
-        val name = "${source.baseName}_unterschrieben.pdf"
+        val name = "${source.baseName}" + (if (placements.all { it.spec != null }) "_bearbeitet.pdf" else "_unterschrieben.pdf")
         val byPage = placements.groupBy { it.page }
         return PDDocument.load(source.file, Docs.memory()).use { doc ->
             val images = IdentityHashMap<Bitmap, PDImageXObject>()
+            val fonts = TextEdit.Fonts(ctx, doc)
             var done = 0
             for ((index, list) in byPage) {
                 val page = doc.getPage(index)
@@ -418,6 +419,11 @@ object PdfOps {
                 PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
                     cs.transform(m)
                     for (p in list) {
+                        val spec = p.spec
+                        if (spec != null) {
+                            TextEdit.draw(cs, fonts, spec, p.cx, p.cy, vw, vh)
+                            continue
+                        }
                         val img = images.getOrPut(p.bmp) { LosslessFactory.createFromImage(doc, p.bmp) }
                         val sw = p.w * vw
                         val sh = sw * p.bmp.height / p.bmp.width

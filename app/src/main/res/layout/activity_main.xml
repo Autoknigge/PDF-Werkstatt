@@ -420,7 +420,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Unterschreiben"
+                        android:text="Unterschreiben &amp; Text"
                         android:textColor="#FFE9A0"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -428,7 +428,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Formulare mit deiner Unterschrift versehen"
+                        android:text="Unterschreiben, Text schreiben und korrigieren"
                         android:textColor="#FFE9A0"
                         android:textSize="13sp" />
                 </LinearLayout>

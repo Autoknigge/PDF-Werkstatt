@@ -45,3 +45,9 @@ Muster wie Fotos zu PDF: GitHub-Build (Actions), Gratis-Version mit AdMob, gleic
 - Text/Unterschrift einfügen, Formulare ausfüllen, Texterkennung (OCR), Wasserzeichen, Seitenzahlen
 - Bilder/Fotos zu PDF (gibt es in „Fotos zu PDF“)
 - Pro-Version ohne Werbung, Mehrsprachigkeit
+
+## Text schreiben und korrigieren (in „Unterschreiben & Text“)
+- Text an beliebiger Stelle einfügen: echter, markierbarer PDF-Text; Schrift Comic Neue (eingebettet) oder Helvetica, fett, Größe in pt, Farbe
+- Korrektur: alter Text kann mit einem Feld in der Hintergrundfarbe der Seite abgedeckt werden (der alte Text bleibt unter dem Feld in der Datei)
+- Verschieben mit einem, Größe mit zwei Fingern oder Regler; Speichern als neue Datei (`…_bearbeitet.pdf`)
+- Nicht getestet auf dem Gerät; kein automatischer Zeilenumbruch (Zeilen selbst eingeben)

@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
             "Zu Bildern",
             "Passwort & Metadaten",
             "Seitenzahlen & Wasserzeichen",
-            "Unterschreiben"
+            "Unterschreiben & Text"
         )
         val modes = arrayOf(null, ToolActivity.Mode.SPLIT, ToolActivity.Mode.COMPRESS, ToolActivity.Mode.IMAGES, ToolActivity.Mode.PROTECT, ToolActivity.Mode.STAMP)
         val title = if (single) "Was möchtest du mit der PDF tun?" else "Was möchtest du mit den ${uris.size} PDFs tun?"
