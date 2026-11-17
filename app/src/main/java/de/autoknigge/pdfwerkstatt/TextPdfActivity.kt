@@ -15,7 +15,9 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.Spanned
 import android.text.style.RelativeSizeSpan
+import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -347,6 +349,8 @@ class TextPdfActivity : AppCompatActivity() {
                 if (e > s) {
                     if (r.bold && p.level == 0) sb.setSpan(StyleSpan(Typeface.BOLD), s, e, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     if (r.italic) sb.setSpan(StyleSpan(Typeface.ITALIC), s, e, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    if (r.underline) sb.setSpan(UnderlineSpan(), s, e, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    if (r.strike) sb.setSpan(StrikethroughSpan(), s, e, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
             }
             val end = sb.length
