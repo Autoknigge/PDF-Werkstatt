@@ -36,6 +36,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tileProtect).setOnClickListener { startTool(ToolActivity.Mode.PROTECT, emptyList()) }
         findViewById<View>(R.id.tileStamp).setOnClickListener { startTool(ToolActivity.Mode.STAMP, emptyList()) }
         findViewById<View>(R.id.tileSign).setOnClickListener { startActivity(Intent(this, SignActivity::class.java)) }
+        findViewById<View>(R.id.tileDocPdf).setOnClickListener {
+            startActivity(Intent(this, TextPdfActivity::class.java).putExtra(TextPdfActivity.EXTRA_MODE, TextPdfActivity.CONVERT))
+        }
+        findViewById<View>(R.id.tileTextPage).setOnClickListener {
+            startActivity(Intent(this, TextPdfActivity::class.java).putExtra(TextPdfActivity.EXTRA_MODE, TextPdfActivity.APPEND))
+        }
 
         mapOf(
             R.id.tvAbout to URL_HOME,
