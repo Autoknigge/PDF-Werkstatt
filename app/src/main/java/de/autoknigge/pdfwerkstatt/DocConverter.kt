@@ -166,6 +166,7 @@ object DocConverter {
         var inT = false
         var bold = false
         var italic = false
+        var pageBefore = false
         fun add(t: String) {
             if (t.isEmpty()) return
             val last = runs.lastOrNull()
@@ -177,7 +178,7 @@ object DocConverter {
         while (ev != XmlPullParser.END_DOCUMENT) {
             when (ev) {
                 XmlPullParser.START_TAG -> when (ln(p)) {
-                    "p" -> { runs = ArrayList(); level = 0; bullet = false }
+                    "p" -> { runs = ArrayList(); level = 0; bullet = false; pageBefore = false }
                     "pPr" -> inPPr = true
                     "pStyle" -> if (inPPr) {
                         val v = (attr(p, "val") ?: "").lowercase()
@@ -193,13 +194,17 @@ object DocConverter {
                     "i" -> if (inRun && !inPPr) italic = on(attr(p, "val"))
                     "t" -> inT = true
                     "tab" -> if (inRun) add("\t")
-                    "br", "cr" -> if (inRun) add("\n")
+                    "br", "cr" -> if (inRun) add(if (attr(p, "type") == "page") "\n---Seite---\n" else "\n")
+                    "pageBreakBefore" -> if (inPPr) pageBefore = true
                 }
                 XmlPullParser.END_TAG -> when (ln(p)) {
                     "pPr" -> inPPr = false
                     "r" -> inRun = false
                     "t" -> inT = false
-                    "p" -> paras.add(RichPara(level, bullet, runs))
+                    "p" -> {
+                        if (pageBefore) paras.add(RichPara(0, false, listOf(RichRun("---Seite---", false, false))))
+                        paras.add(RichPara(level, bullet, runs))
+                    }
                 }
                 XmlPullParser.TEXT -> if (inT) add(p.text)
             }

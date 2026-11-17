@@ -13,11 +13,13 @@ import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.text.Spanned
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -59,6 +61,11 @@ class TextPdfActivity : AppCompatActivity() {
     private lateinit var progress: ProgressBar
     private lateinit var etText: EditText
     private lateinit var rgPos: RadioGroup
+    private lateinit var rgSize: RadioGroup
+    private lateinit var rgMargin: RadioGroup
+    private lateinit var cbHeading: CheckBox
+
+    private class Opts(val fontSize: Float, val margin: Int, val headingBreak: Boolean)
     private lateinit var adManager: AdManager
 
     private var busy = false
@@ -168,6 +175,31 @@ class TextPdfActivity : AppCompatActivity() {
             col.addView(box, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
         }
 
+        val setBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.bg_tile_gruen)
+            setPadding(dp(16), dp(10), dp(16), dp(12))
+        }
+        setBox.addView(TextView(this).apply { text = "Seitenlayout"; textSize = 13f; setTextColor(GOLD); setTypeface(typeface, Typeface.BOLD) })
+        fun group(label: String, vararg names: String): RadioGroup {
+            setBox.addView(TextView(this).apply { text = label; textSize = 13f; setTextColor(CREME); setPadding(0, dp(8), 0, 0) })
+            val g = RadioGroup(this).apply { orientation = LinearLayout.HORIZONTAL }
+            names.forEachIndexed { i, n ->
+                g.addView(RadioButton(this).apply { id = View.generateViewId(); text = n; setTextColor(CREME); isChecked = i == 1 })
+            }
+            setBox.addView(g)
+            return g
+        }
+        rgSize = group("Schriftgröße", "Klein", "Normal", "Groß")
+        rgMargin = group("Seitenrand", "Schmal", "Normal", "Breit")
+        cbHeading = CheckBox(this).apply { text = "Jede Überschrift beginnt eine neue Seite"; setTextColor(CREME) }
+        setBox.addView(cbHeading)
+        setBox.addView(TextView(this).apply {
+            text = "Eigener Seitenumbruch: eine Zeile mit ---Seite--- im Text. In Word-Dateien werden harte Seitenumbrüche übernommen."
+            textSize = 12f; setTextColor(CREME); setPadding(0, dp(6), 0, 0)
+        })
+        col.addView(setBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
+
         btnRun = TextView(this).apply {
             text = if (mode == CONVERT) "Als PDF speichern" else "Seite einfügen"
             textSize = 19f
@@ -238,13 +270,26 @@ class TextPdfActivity : AppCompatActivity() {
         }
     }
 
+    private fun options(): Opts {
+        fun idx(g: RadioGroup): Int {
+            for (i in 0 until g.childCount) if (g.getChildAt(i).id == g.checkedRadioButtonId) return i
+            return 1
+        }
+        return Opts(
+            listOf(10f, 12f, 14f)[idx(rgSize)],
+            listOf(36, 56, 72)[idx(rgMargin)],
+            cbHeading.isChecked
+        )
+    }
+
     private fun run() {
         if (busy || loading) return
+        val o = options()
         if (mode == CONVERT) {
             val t = docText ?: return
             val base = Docs.sanitize(docName.substringBeforeLast('.', docName)).ifBlank { "Dokument" }
             work("PDF konnte nicht erstellt werden", {
-                val bytes = makePdf(t)
+                val bytes = makePdf(t, o)
                 val name = "$base.pdf"
                 val uri = Docs.save(this, name, "application/pdf") { it.write(bytes) }
                 SaveResult(listOf(uri), listOf(name))
@@ -255,7 +300,7 @@ class TextPdfActivity : AppCompatActivity() {
             if (text.isBlank()) return Flow.toast(this, "Bitte zuerst Text eingeben.")
             val atStart = rgPos.checkedRadioButtonId == (rgPos.tag as? Int)
             work("Die Seite konnte nicht eingefügt werden", {
-                val textPdf = makePdf(SpannableString(text))
+                val textPdf = makePdf(SpannableString(text), o)
                 val name = "${src.baseName}_mit_Text.pdf"
                 val orig = PDDocument.load(src.file, Docs.memory())
                 val extra = PDDocument.load(ByteArrayInputStream(textPdf), Docs.memory())
@@ -313,38 +358,84 @@ class TextPdfActivity : AppCompatActivity() {
         return sb
     }
 
+    private fun isBreakLine(l: String): Boolean {
+        val t = l.trim()
+        return t.equals("---Seite---", ignoreCase = true) || t.contains('\u000C')
+    }
+
+    /** Teilt den Text an eigenen Seitenumbrüchen und (optional) vor Überschriften in Abschnitte; jeder beginnt eine neue Seite. */
+    private fun sections(text: CharSequence, o: Opts): List<CharSequence> {
+        val str = text.toString()
+        val sp = text as? Spanned
+        val cuts = ArrayList<IntArray>()   // [von, bis) je Abschnitt
+        var secStart = 0
+        var pos = 0
+        while (pos <= str.length) {
+            val nl = str.indexOf('\n', pos)
+            val e = if (nl < 0) str.length else nl
+            val line = str.substring(pos, e)
+            if (isBreakLine(line)) {
+                cuts.add(intArrayOf(secStart, pos))
+                secStart = minOf(e + 1, str.length)
+            } else if (o.headingBreak && sp != null && e > pos && pos > secStart) {
+                val h = sp.getSpans(pos, e, RelativeSizeSpan::class.java).any {
+                    it.sizeChange >= 1.5f && sp.getSpanStart(it) <= pos + 2 && sp.getSpanEnd(it) >= e
+                }
+                if (h) { cuts.add(intArrayOf(secStart, pos)); secStart = pos }
+            }
+            if (nl < 0) break
+            pos = nl + 1
+        }
+        cuts.add(intArrayOf(secStart, str.length))
+        return cuts.filter { it[1] > it[0] }
+            .map { text.subSequence(it[0], it[1]) }
+            .filter { it.isNotBlank() }
+    }
+
     /** Text (mit Fett/Kursiv/Überschriften) als A4-PDF mit Seitenumbruch. */
-    private fun makePdf(text: CharSequence): ByteArray {
+    private fun makePdf(text: CharSequence, o: Opts): ByteArray {
         if (text.isBlank()) throw IOException("In der Datei steht kein Text.")
         val pageW = 595
         val pageH = 842
-        val margin = 56
+        val margin = o.margin
         val width = pageW - 2 * margin
         val usable = pageH - 2 * margin
-        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12f; color = 0xFF000000.toInt() }
-        val lay = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
-            .setLineSpacing(0f, 1.15f).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = o.fontSize; color = 0xFF000000.toInt() }
         val doc = PdfDocument()
         try {
-            var line = 0
             var pageNo = 1
-            val n = lay.lineCount
-            while (line < n) {
-                val top = lay.getLineTop(line)
-                var end = line
-                while (end < n && lay.getLineBottom(end) - top <= usable) end++
-                if (end == line) end = line + 1
-                val page = doc.startPage(PdfDocument.PageInfo.Builder(pageW, pageH, pageNo).create())
-                val c = page.canvas
-                c.save()
-                c.clipRect(margin.toFloat(), margin.toFloat(), (margin + width).toFloat(), (margin + (lay.getLineBottom(end - 1) - top)).toFloat())
-                c.translate(margin.toFloat(), (margin - top).toFloat())
-                lay.draw(c)
-                c.restore()
-                doc.finishPage(page)
-                line = end
-                pageNo++
+            for (sec in sections(text, o)) {
+                val str = sec.toString()
+                val lay = StaticLayout.Builder.obtain(sec, 0, sec.length, paint, width)
+                    .setLineSpacing(0f, 1.15f).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
+                val n = lay.lineCount
+                fun paraStart(l: Int): Boolean = lay.getLineStart(l) == 0 || str[lay.getLineStart(l) - 1] == '\n'
+                fun paraEnd(l: Int): Boolean = lay.getLineEnd(l) >= str.length || str[lay.getLineEnd(l)] == '\n' ||
+                    (lay.getLineEnd(l) > 0 && str[lay.getLineEnd(l) - 1] == '\n')
+                var line = 0
+                while (line < n) {
+                    val top = lay.getLineTop(line)
+                    var end = line
+                    while (end < n && lay.getLineBottom(end) - top <= usable) end++
+                    if (end == line) end = line + 1
+                    if (end < n) {
+                        // keine einzelne Zeile eines Absatzes allein unten oder oben auf einer Seite
+                        if (end - 1 > line && paraStart(end - 1) && !paraEnd(end - 1)) end--
+                        else if (end - 1 > line && paraEnd(end) && !paraStart(end) && !paraStart(end - 1) && end - 2 > line) end--
+                    }
+                    val page = doc.startPage(PdfDocument.PageInfo.Builder(pageW, pageH, pageNo).create())
+                    val c = page.canvas
+                    c.save()
+                    c.clipRect(margin.toFloat(), margin.toFloat(), (margin + width).toFloat(), (margin + (lay.getLineBottom(end - 1) - top)).toFloat())
+                    c.translate(margin.toFloat(), (margin - top).toFloat())
+                    lay.draw(c)
+                    c.restore()
+                    doc.finishPage(page)
+                    line = end
+                    pageNo++
+                }
             }
+            if (pageNo == 1) throw IOException("In der Datei steht kein Text.")
             val out = ByteArrayOutputStream()
             doc.writeTo(out)
             return out.toByteArray()
